@@ -2,6 +2,12 @@
 
 This repository provides a fast and efficient solution for setting up a Laravel development environment using Docker. The goal is to automate the entire container creation and configuration process, allowing you to get started with your Laravel project without worrying about manual environment setup.
 
+# Video Demonstration
+
+Watch the following video to see the full process of setting up the project:
+
+- [Watch the demo on YouTube](https://www.youtube.com/watch?v=nrSqmeHyKQs)
+
 ## Features
 
 - Automated Docker setup for PHP, Nginx, MySQL, and Redis.
@@ -29,38 +35,38 @@ To get started with this project, follow these steps:
 
 2. Copy the .env.example file to .env
 
-```bash
-cp .env.example .env
-```
+   ```bash
+   cp .env.example .env
+   ```
 
 3. Open the .env file and configure the following variables:
 
-```bash
+   ```bash
 
-APP_NAME="your Application name"
-DB_DATABASE=your_database_name
-DB_USERNAME=your_database_username
-DB_PASSWORD=your_database_password
+   APP_NAME="your Application name"
+   DB_DATABASE=your_database_name
+   DB_USERNAME=your_database_username
+   DB_PASSWORD=your_database_password
 
-```
+   ```
 
 4. Give execution permission to the start.sh script:
 
-```bash
-chmod +x start.sh
-```
+   ```bash
+   chmod +x start.sh
+   ```
 
 5. Run the start.sh script to bring up the containers and laravel:
 
-```bash
-./start.sh
-```
+   ```bash
+   ./start.sh
+   ```
 
 6. To start developing the application, access the app container with the following command:
 
-```bash
-docker compose exec app bash
-```
+   ```bash
+   docker compose exec app bash
+   ```
 
 ## This will set up the following services:
 
