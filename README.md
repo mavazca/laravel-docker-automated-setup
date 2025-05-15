@@ -50,17 +50,26 @@ To get started with this project, follow these steps:
 
    ```
 
-4. Give execution permission to the start.sh script:
+4. Give execution permission to the install script:
 
    ```bash
-   chmod +x start.sh
+   chmod +x install
    ```
 
-5. Run the start.sh script to bring up the containers and laravel:
-
+5. Run the install script to bring up the containers and laravel:
+    - --frankenphp (-f)
+    - --swoole (-s)
+    - --nginx (-n)
+    - --build (-b)
+   
    ```bash
-   ./start.sh
+   ./install --frankenphp
    ```
+    OR
+   ```bash
+   ./install --frankenphp --build
+   ```
+
 
 6. To start developing the application, access the app container with the following command:
 
@@ -71,7 +80,7 @@ To get started with this project, follow these steps:
 ## This will set up the following services:
 
 app: PHP-FPM with Laravel
-nginx: Web server (with SSL enabled)
+nginx: Web server
 mysql: MySQL database
 redis: Redis caching service
 mailpit: Local mail server for development

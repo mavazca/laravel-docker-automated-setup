@@ -1,0 +1,83 @@
+#!/bin/bash
+
+BUILD_OPTION=""
+PROJECT_NAME="novo"
+INSTALL_OCTANE_CMD=""
+
+if [ ! -f .env ]; then
+    echo "Erro: O arquivo .env não existe. Certifique-se de criá-lo antes de continuar."
+    echo "Ex: cp .env.example .env"
+    exit 1
+fi
+
+if [ "$2" = "--build" ] || [ "$2" = "-b" ]; then
+    BUILD_OPTION="--build"
+fi
+
+if [ "$1" = "--frankenphp" ] || [ "$1" = "-f" ]; then
+    cp docker/frankenphp/docker-compose.frankenphp.yml docker-compose.yml
+    INSTALL_OCTANE_CMD="composer require laravel/octane && php artisan octane:install --server=frankenphp"
+    rm -rf docker/nginx docker/swoole docker-compose.swoole.yml docker-compose.nginx.yml docker-compose.frankenphp.yml
+elif [ "$1" = "--swoole" ] || [ "$1" = "-s" ]; then
+    cp docker/swoole/docker-compose.swoole.yml docker-compose.yml
+    INSTALL_OCTANE_CMD="composer require laravel/octane && php artisan octane:install --server=swoole"
+    rm -rf docker/nginx docker/frankenphp docker-compose.nginx.yml docker-compose.frankenphp.yml docker-compose.swoole.yml
+elif [ "$1" = "--nginx" ] || [ "$1" = "-n" ]; then
+    cp docker/nginx/docker-compose.nginx.yml docker-compose.yml
+    INSTALL_OCTANE_CMD="echo 'Sem instalação do Octane'"
+    rm -rf docker/swoole docker/frankenphp docker-compose.swoole.yml docker-compose.frankenphp.yml docker-compose.nginx.yml
+else
+    echo "Error: You must specify either --frankenphp (-f) or --swoole (-s) or --nginx (-n)."
+    echo "Ex: $0 --frankenphp"
+    echo "Ex: $0 --frankenphp --build"
+    echo "Ex: $0 -f -b"
+    exit 1
+fi
+
+# Inicia os containers
+docker compose up -d $BUILD_OPTION
+
+# Aguarda 10 segundos para garantir que o container esteja completamente ativo
+sleep 10
+
+echo -e '\n'
+
+# Entra no Container e realiza operação pra iniciar o desenvolvimento
+docker compose exec app bash -c "
+    echo 'Baixando última versão do Laravel' && \
+    composer create-project --prefer-dist laravel/laravel $PROJECT_NAME && \
+    cd $PROJECT_NAME && \
+    rm -f .env && \
+    rm -f README.md && \
+    cd .. && \
+    cp -r $PROJECT_NAME/* . && \
+    rm -rf $PROJECT_NAME && \
+    php artisan key:generate && \
+    php artisan storage:link && \
+    echo 'Criando banco e rodando as Migrations' && \
+    php artisan migrate --seed --force && \
+    $INSTALL_OCTANE_CMD && \
+    echo 'Instalando o Filament' && \
+    composer require filament/filament:'^3.2' -W && \
+    php artisan filament:install --panels && \
+    echo 'Publicando arquivo de configuração do Filament' && \
+    php artisan vendor:publish --tag=filament-config && \
+    echo 'Publicando arquivos de tradução do Filament' && \
+    php artisan vendor:publish --tag=filament-panels-translations && \
+    php artisan vendor:publish --tag=filament-actions-translations && \
+    php artisan vendor:publish --tag=filament-forms-translations && \
+    php artisan vendor:publish --tag=filament-infolists-translations && \
+    php artisan vendor:publish --tag=filament-notifications-translations && \
+    php artisan vendor:publish --tag=filament-tables-translations && \
+    php artisan vendor:publish --tag=filament-translations && \
+    echo 'Instalação concluídas com sucesso!'
+"
+
+docker compose restart
+
+echo -e '\n'
+echo "Acesse o painel do Filament em: http://localhost/admin"
+echo " Usuario: test@example.com"
+echo " Senha: password"
+
+rm -rf install

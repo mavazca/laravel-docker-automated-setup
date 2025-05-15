@@ -1,0 +1,58 @@
+#!/bin/bash
+
+if [ -f /var/www/composer.json ]; then
+    if [ -f /var/www/.env ]; then
+        APP_ENV=$(grep -E '^APP_ENV=' /var/www/.env | cut -d '=' -f2 | tr -d '"')
+    fi
+
+    if [ "$APP_ENV" = "production" ]; then
+        echo "**********************************"
+        echo "* Ambiente de produção detectado *"
+        echo "**********************************"
+        composer clear-cache
+        composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction --no-progress
+        npm ci
+        npm run build
+    else
+        echo "*****************************************"
+        echo "* Ambiente de desenvolvimento detectado *"
+        echo "*****************************************"
+        composer clear-cache
+        composer install --optimize-autoloader --prefer-dist --no-interaction --no-progress
+        npm install
+        npm run build
+    fi
+
+    if [ -f /var/www/.env ]; then
+        APP_KEY_VALUE=$(grep -E '^APP_KEY=' /var/www/.env | cut -d '=' -f2-)
+        if [ -z "$APP_KEY_VALUE" ] || [ "$APP_KEY_VALUE" = "base64:" ]; then
+            echo "*******************"
+            echo "* Gerando APP_KEY *"
+            echo "*******************"
+            php artisan key:generate
+        fi
+    fi
+
+    if [ "$APP_ENV" = "production" ]; then
+        php artisan migrate --force
+        php artisan config:cache
+        php artisan route:cache
+        php artisan view:cache
+        php artisan storage:link
+        php artisan optimize:clear
+    else
+        php artisan migrate
+        php artisan config:clear
+        php artisan route:clear
+        php artisan view:clear
+        php artisan storage:link
+    fi
+
+    php artisan filament:optimize
+else
+    echo "*************************************************************"
+    echo "* Comandos ignorados, /var/www/composer.json não encontrado *"
+    echo "*************************************************************"
+fi
+
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
